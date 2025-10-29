@@ -1,141 +1,295 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>💎 Diamond Slots Multiplayer</title>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js"></script>
-<style>
-/* Same style as your old version shortened here for clarity */
-body {background: radial-gradient(circle,#0b001f,#000);font-family:Orbitron,sans-serif;text-align:center;color:white}
-.slot{display:inline-block;width:100px;height:100px;line-height:100px;margin:10px;font-size:2em;border:3px solid #8f4aff;border-radius:15px}
-#leaderboard{background:rgba(20,0,40,.8);padding:10px;border-radius:10px;width:300px;margin:20px auto}
-</style>
-</head>
-<body>
-<h1>💎 Diamond Slots Multiplayer 💎</h1>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diamond Slots</title>
+  <style>
+    body {
+      margin: 0;
+      background: radial-gradient(circle at center, #0b001f 0%, #000 100%);
+      font-family: 'Orbitron', sans-serif;
+      color: white;
+      text-align: center;
+      overflow: hidden;
+    }
 
-<div id="loginDiv">
-  <input id="email" placeholder="Email"><br>
-  <input id="password" type="password" placeholder="Password"><br>
-  <button onclick="login()">Login / Register</button>
+    h1 {
+      font-size: 2.5em;
+      color: #8f4aff;
+      text-shadow: 0 0 20px #8f4aff;
+    }
+
+    #diamondDisplay {
+      font-size: 1.5em;
+      margin: 10px;
+      color: #00eaff;
+      text-shadow: 0 0 10px #00eaff;
+    }
+
+    .slot {
+      display: inline-block;
+      width: 100px;
+      height: 100px;
+      margin: 10px;
+      background: black;
+      border: 3px solid #8f4aff;
+      border-radius: 15px;
+      box-shadow: 0 0 15px #8f4aff;
+      font-size: 2em;
+      line-height: 100px;
+      color: #00eaff;
+      text-shadow: 0 0 15px #00eaff;
+    }
+<div id="loginBox">
+  <input id="username" placeholder="Username">
+  <input id="password" placeholder="Password" type="password">
+  <button onclick="loginOrRegister(username.value, password.value)">Login</button>
 </div>
 
-<div id="gameDiv" style="display:none;">
+    #spinBtn {
+      padding: 15px 30px;
+      font-size: 1.2em;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(90deg, #8f4aff, #00eaff);
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 0 20px #8f4aff;
+      transition: 0.3s;
+    }
+
+    #spinBtn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 40px #00eaff;
+    }
+
+    .powerups button {
+      margin: 10px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #1e0037;
+      color: white;
+      text-shadow: 0 0 10px #00eaff;
+      box-shadow: 0 0 10px #8f4aff;
+      transition: 0.3s;
+    }
+
+    .powerups button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px #00eaff;
+    }
+
+    #leaderboard {
+      margin-top: 30px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 15px;
+      border-radius: 15px;
+      width: 300px;
+      margin-left: auto;
+      margin-right: auto;
+      box-shadow: 0 0 15px #8f4aff;
+    }
+
+    .jackpot {
+      font-size: 3em;
+      color: gold;
+      animation: jackpotAnim 1s infinite alternate;
+      text-shadow: 0 0 25px gold, 0 0 50px orange;
+    }
+
+    @keyframes jackpotAnim {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(1.2); opacity: 0.8; }
+    }
+  </style>
+</head>
+<body>
+  <h1>💎 Diamond Slots 💎</h1>
+
+  <div>
+    <input type="text" id="username" placeholder="Enter your name" style="padding:8px; border-radius:6px;">
+    <button onclick="saveUsername()">Save</button>
+  </div>
+
   <div id="diamondDisplay"></div>
+
   <div id="slots">
     <div class="slot" id="slot1">❔</div>
     <div class="slot" id="slot2">❔</div>
     <div class="slot" id="slot3">❔</div>
   </div>
+
   <br>
   <button id="spinBtn">🎰 SPIN</button>
-  <h3 id="result"></h3>
+
+  <div class="powerups">
+    <button id="luckBtn">💫 2× Luck (1000💎)</button>
+    <button id="rewardBtn">💎 2× Reward (2000💎)</button>
+    <button id="freeSpinBtn">🎟 Free Spin (1500💎)</button>
+  </div>
+
+  <h2 id="result"></h2>
 
   <div id="leaderboard">
-    <h2>🏆 Leaderboard 🏆</h2>
+    <h3>🏆 Leaderboard</h3>
     <ol id="leaderboardList"></ol>
   </div>
-</div>
 
+  <audio id="spinSound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-slot-machine-loop-2067.mp3"></audio>
+  <audio id="jackpotSound" src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3"></audio>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// === 1️⃣ FIREBASE CONFIG ===
-const firebaseConfig = {
-  // paste your config here
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.database();
+  // 🔹 1. Connect to your Supabase project
+  const SUPABASE_URL = "https://qknwaibcivwzmdwdjluq.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbndhaWJjaXZ3em1kd2RqbHVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3Mzk5MTUsImV4cCI6MjA3NzMxNTkxNX0.L-vGz-UnxCCwjRG2kXbp7A-n96EviJYFpgDLOhQr57Y";
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let user = null;
-let diamonds = 1000;
+  // 🔹 2. Player session data
+  let currentPlayer = null;
+  let diamonds = 0;
 
-// === 2️⃣ LOGIN OR REGISTER ===
-async function login() {
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
-  try {
-    const userCred = await auth.signInWithEmailAndPassword(email, password);
-    user = userCred.user;
-    startGame();
-  } catch (e) {
-    if (e.code === 'auth/user-not-found') {
-      const newUser = await auth.createUserWithEmailAndPassword(email, password);
-      user = newUser.user;
-      await db.ref('players/'+user.uid).set({ email, diamonds });
-      startGame();
+  // 🔹 3. Login / Signup Function
+  async function loginOrRegister(username, password) {
+    // Try to find player
+    let { data } = await supabase
+      .from("players")
+      .select("*")
+      .eq("username", username)
+      .eq("password", password)
+      .single();
+
+    if (!data) {
+      // If not found, register a new one
+      await supabase.from("players").insert([{ username, password, diamonds: 1000 }]);
+      diamonds = 1000;
+      alert("New player registered! Starting with 1000 diamonds.");
     } else {
-      alert(e.message);
+      diamonds = data.diamonds;
+      alert(`Welcome back ${username}! You have ${diamonds} diamonds.`);
     }
-  }
-}
 
-// === 3️⃣ START GAME ===
-function startGame() {
-  document.getElementById('loginDiv').style.display='none';
-  document.getElementById('gameDiv').style.display='block';
-  db.ref('players/'+user.uid+'/diamonds').on('value', snap=>{
-    diamonds = snap.val() || 0;
+    currentPlayer = username;
     updateDisplay();
-  });
-  loadLeaderboard();
-}
-
-function updateDisplay() {
-  document.getElementById('diamondDisplay').innerText = `💎 Diamonds: ${diamonds}`;
-}
-
-// === 4️⃣ SPIN ===
-document.getElementById('spinBtn').onclick = ()=>{
-  if (diamonds < 50) return alert("Not enough diamonds!");
-  diamonds -= 50;
-  const s=["💎","🍒","🍋","🔔","7️⃣","⭐","🔥"];
-  const r1=s[Math.floor(Math.random()*s.length)];
-  const r2=s[Math.floor(Math.random()*s.length)];
-  const r3=s[Math.floor(Math.random()*s.length)];
-  slot1.textContent=r1;slot2.textContent=r2;slot3.textContent=r3;
-  if (r1===r2 && r2===r3){
-    let reward=500;
-    diamonds+=reward;
-    result.innerText=`🎉 You won +${reward}!`;
-  }else{
-    result.innerText="😢 Try again!";
   }
-  db.ref('players/'+user.uid+'/diamonds').set(diamonds);
-  loadLeaderboard();
-};
 
-// === 5️⃣ LEADERBOARD ===
-function loadLeaderboard(){
-  db.ref('players').orderByChild('diamonds').limitToLast(10).once('value', snap=>{
-    const list=document.getElementById('leaderboardList');
-    let arr=[];
-    snap.forEach(c=>arr.push(c.val()));
-    arr.reverse();
-    list.innerHTML=arr.map(p=>`<li>${p.email.split('@')[0]} — ${p.diamonds} 💎</li>`).join('');
-  });
-}
+  // 🔹 4. Update Diamonds in Supabase
+  async function saveDiamonds() {
+    if (!currentPlayer) return;
+    await supabase
+      .from("players")
+      .update({ diamonds })
+      .eq("username", currentPlayer);
+  }
+
+  // 🔹 5. Show Leaderboard
+  async function showLeaderboard() {
+    const { data } = await supabase
+      .from("players")
+      .select("username, diamonds")
+      .order("diamonds", { ascending: false });
+
+    let html = "<h3>🏆 Leaderboard</h3>";
+    data.forEach((p, i) => {
+      html += `<p>${i + 1}. ${p.username} — 💎 ${p.diamonds}</p>`;
+    });
+    document.getElementById("leaderboard").innerHTML = html;
+  }
 </script>
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
 
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyDz9r72XqaOc_UIo4KgV5G2OUSRKX0VWzQ",
-    authDomain: "gambling-slot.firebaseapp.com",
-    projectId: "gambling-slot",
-    storageBucket: "gambling-slot.firebasestorage.app",
-    messagingSenderId: "61827285741",
-    appId: "1:61827285741:web:f037adf70a2994bd70c2e4"
-  };
+  <script>
+    let diamonds = 1000;
+    let luckMultiplier = 1;
+    let rewardMultiplier = 1;
+    let freeSpin = false;
+    let username = localStorage.getItem('username') || '';
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-</script>
+    const symbols = ["💎", "🍒", "🍋", "🔔", "7️⃣", "⭐", "🔥"];
+    const diamondDisplay = document.getElementById("diamondDisplay");
+    const resultDisplay = document.getElementById("result");
+    const spinSound = document.getElementById("spinSound");
+    const jackpotSound = document.getElementById("jackpotSound");
+
+    function saveUsername() {
+      username = document.getElementById('username').value.trim();
+      if (!username) return alert("Enter a username!");
+      localStorage.setItem('username', username);
+      loadData();
+    }
+
+    function loadData() {
+      const leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '{}');
+      if (leaderboard[username]) diamonds = leaderboard[username];
+      updateDisplay();
+      updateLeaderboard();
+    }
+
+    function updateDisplay() {
+      diamondDisplay.textContent = `💎 Diamonds: ${diamonds}`;
+      const leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '{}');
+      leaderboard[username] = diamonds;
+      localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
+      updateLeaderboard();
+    }
+
+    function updateLeaderboard() {
+      const leaderboardList = document.getElementById("leaderboardList");
+      const leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '{}');
+      const sorted = Object.entries(leaderboard).sort((a,b) => b[1] - a[1]);
+      leaderboardList.innerHTML = sorted.map(([name, score]) => `<li>${name}: ${score} 💎</li>`).join('');
+    }
+
+    function spin() {
+      if (!username) return alert("Enter your username first!");
+      if (diamonds <= 0 && !freeSpin) {
+        resultDisplay.textContent = "❌ Out of diamonds!";
+        return;
+      }
+
+      if (!freeSpin) diamonds -= 50;
+      freeSpin = false;
+
+      spinSound.play();
+
+      const s1 = symbols[Math.floor(Math.random() * symbols.length)];
+      const s2 = symbols[Math.floor(Math.random() * symbols.length)];
+      const s3 = symbols[Math.floor(Math.random() * symbols.length)];
+
+      document.getElementById("slot1").textContent = s1;
+      document.getElementById("slot2").textContent = s2;
+      document.getElementById("slot3").textContent = s3;
+
+      if (s1 === s2 && s2 === s3) {
+        let reward = 500 * rewardMultiplier;
+        if (Math.random() < 0.1 * luckMultiplier) {
+          reward *= 5;
+          jackpotSound.play();
+          resultDisplay.innerHTML = `<span class='jackpot'>🎉 JACKPOT! +${reward} 💎</span>`;
+        } else {
+          resultDisplay.textContent = `🎉 You won +${reward} 💎!`;
+        }
+        diamonds += reward;
+      } else {
+        resultDisplay.textContent = "😢 Try again!";
+      }
+
+      updateDisplay();
+    }
+
+    document.getElementById("spinBtn").onclick = spin;
+    document.getElementById("luckBtn").onclick = () => { if (diamonds >= 1000) { diamonds -= 1000; luckMultiplier = 2; setTimeout(()=>luckMultiplier=1,15000); updateDisplay(); resultDisplay.textContent = "💫 Luck boost active!"; } };
+    document.getElementById("rewardBtn").onclick = () => { if (diamonds >= 2000) { diamonds -= 2000; rewardMultiplier = 2; setTimeout(()=>rewardMultiplier=1,15000); updateDisplay(); resultDisplay.textContent = "💎 Double rewards active!"; } };
+    document.getElementById("freeSpinBtn").onclick = () => { if (diamonds >= 1500) { diamonds -= 1500; freeSpin = true; updateDisplay(); resultDisplay.textContent = "🎟 Free spin ready!"; } };
+
+    if (username) loadData();
+  </script>
+saveDiamonds();
+showLeaderboard();
+
 </body>
+<div id="leaderboard"></div>
+
 </html>
